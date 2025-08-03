@@ -103,7 +103,7 @@ function Board() {
   //           column.cardOrderIds = [generatePlaceholderCard(column)._id]
   //         }
   //         // else {
-  //         // MINH KHONG BI CAI LOI NGO NGAN NAY
+  //         // MINH KHONG BI CAI LOI NGO NGAN NAY ???
   //         // Sắp xếp thứ tự các column luôn ở đây trước khi đưa dữ liệu xuống bên dưới các component con 71
   //         //   column.cards = mapOrder(column.cards, column.cardOrderIds, '_id')
   //         // }

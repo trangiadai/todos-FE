@@ -7,6 +7,12 @@ import { Card as MuiCard } from '@mui/material'
 import CardContent from '@mui/material/CardContent'
 import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
+import { useState } from 'react'
+import TextField from '@mui/material/TextField'
+import IconButton from '@mui/material/IconButton'
+import EditIcon from '@mui/icons-material/Edit'
+import CheckIcon from '@mui/icons-material/Check'
+import axios from 'axios'
 
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -23,6 +29,33 @@ function Card({ card }) {
     id: card._id,
     data: { ...card }
   })
+
+  const [isEditing, setIsEditing] = useState(false)
+const [editedTitle, setEditedTitle] = useState(card?.title)
+const [hovering, setHovering] = useState(false)
+
+const handleUpdateTitle = async () => {
+  try {
+    const res = await axios.post(
+      `http://localhost:8080/v1/cards/edit`,
+      null,
+      {
+        params: {
+          cardId: card._id,
+          colunmId: "", // Đảm bảo card có chứa columnId
+          cardTitle: editedTitle,
+          colunmTitle: '' // Hoặc truyền từ props nếu có
+        }
+      }
+    )
+    setIsEditing(false)
+    // Cập nhật lại title nếu backend trả về kết quả mới
+    setEditedTitle(res.data.title)
+  } catch (error) {
+    console.error('Update title failed:', error)
+  }
+}
+
 
   const dndKitCardStyles = {
     /**
@@ -63,9 +96,37 @@ function Card({ card }) {
     >
       {card?.cover && <CardMedia sx={{ height: 140 }} image={card?.cover} />}
 
-      <CardContent sx={{ p: 1.5, '&:last-child': { p: 1.5 } }}>
-        <Typography>{card?.title}</Typography>
-      </CardContent>
+      <CardContent
+  sx={{ p: 1.5, '&:last-child': { p: 1.5 } }}
+  onMouseEnter={() => setHovering(true)}
+  onMouseLeave={() => setHovering(false)}
+>
+  {isEditing ? (
+    <TextField
+      value={editedTitle}
+      onChange={(e) => setEditedTitle(e.target.value)}
+      onBlur={handleUpdateTitle}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') handleUpdateTitle()
+      }}
+      size="small"
+      autoFocus
+      fullWidth
+    />
+  ) : (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <Typography variant="body2" sx={{ flexGrow: 1 }}>
+        {editedTitle}
+      </Typography>
+      {hovering && (
+        <IconButton size="small" onClick={() => setIsEditing(true)}>
+          <EditIcon fontSize="small" />
+        </IconButton>
+      )}
+    </div>
+  )}
+</CardContent>
+
 
       {/* XEM XET BO PHAN DUOI NAY */}
       {shouldShowCardAction() && (
