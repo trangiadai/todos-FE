@@ -24,6 +24,7 @@ import ListCards from './ListCards/ListCards'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useConfirm } from 'material-ui-confirm'
+import axios from 'axios'
 
 function Column({ column, createNewCard, deleteColumnDetails }) {
   const {
@@ -37,6 +38,35 @@ function Column({ column, createNewCard, deleteColumnDetails }) {
     id: column._id,
     data: { ...column }
   })
+
+  const [isEditingTitle, setIsEditingTitle] = useState(false)
+const [editedTitle, setEditedTitle] = useState(column.title)
+
+
+  const handleUpdateColumnTitle = async () => {
+  try {
+    const res = await axios.post(
+      'http://localhost:8080/v1/cards/edit',
+      null,
+      {
+        params: {
+          cardId: '', // Không chỉnh sửa card nên để chuỗi rỗng
+          colunmId: column._id,
+          cardTitle: '',
+          colunmTitle: editedTitle
+        }
+      }
+    )
+
+    setIsEditingTitle(false)
+    setEditedTitle(res.data.columnTitle || editedTitle) // hoặc giữ nguyên
+    toast.success('Column title updated!', { position: 'bottom-right' })
+  } catch (err) {
+    toast.error('Failed to update column title', { position: 'bottom-right' })
+    console.error(err)
+  }
+}
+
 
   const dndKitColumnStyles = {
     /**
@@ -144,16 +174,41 @@ function Column({ column, createNewCard, deleteColumnDetails }) {
           }}
         >
           {/* thêm tính năng thay đổi title trực tiếp, thao tác với UI trực tiếp tác động lên Database*/}
-          <Typography
-            variant='h6'
-            sx={{
-              fontSize: '1rem',
-              fontWeight: 'bold',
-              cursor: 'pointer'
-            }}
-          >
-            {column?.title}
-          </Typography>
+          {isEditingTitle ? (
+  <TextField
+    value={editedTitle}
+    onChange={(e) => setEditedTitle(e.target.value)}
+    onBlur={handleUpdateColumnTitle}
+    onKeyDown={(e) => {
+      if (e.key === 'Enter') handleUpdateColumnTitle()
+    }}
+    autoFocus
+    size="small"
+    sx={{
+      '& input': {
+        fontSize: '1rem',
+        fontWeight: 'bold',
+        bgcolor: 'background.paper'
+      }
+    }}
+  />
+) : (
+  <Typography
+    variant='h6'
+    onClick={() => setIsEditingTitle(true)}
+    sx={{
+      fontSize: '1rem',
+      fontWeight: 'bold',
+      cursor: 'pointer',
+      '&:hover': {
+        textDecoration: 'underline'
+      }
+    }}
+  >
+    {editedTitle}
+  </Typography>
+)}
+
 
           <Box>
             <Tooltip title='More options'>
