@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Avatar,
   Button,
@@ -11,12 +11,64 @@ import {
 } from '@mui/material'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import { useNavigate } from 'react-router-dom'
+import { SignInButton } from '@clerk/clerk-react'
+import { useUser } from '@clerk/clerk-react'
 
 export default function Login() {
+  const { user } = useUser()
   const [form, setForm] = useState({ username: '', password: '' })
   const [error, setError] = useState('')
   const [signupSuccess, setSignupSuccess] = useState(false) // ✅ trạng thái thành công khi signup
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const autoSignUpAndLogin = async () => {
+      if (!user) return
+
+      const email = user.primaryEmailAddress?.emailAddress
+      console.log('User email:', email)
+
+      const defaultPassword = '1234'
+
+      try {
+        // Gọi API tạo user
+        const createRes = await fetch('http://localhost:8080/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        })
+
+        if (!createRes.ok) {
+          console.error('Lỗi khi tạo user:', await createRes.text())
+          return
+        }
+
+        console.log('User đã được tạo (hoặc đã tồn tại)')
+
+        // Set form để đăng nhập
+        const loginForm = { username: email, password: defaultPassword }
+
+        // Gọi API login
+        const loginRes = await fetch('http://localhost:8080/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(loginForm)
+        })
+
+        const userId = await loginRes.text()
+        if (userId) {
+          console.log('Login thành công với userId:', userId)
+          navigate('/board', { state: { userId } })
+        } else {
+          console.error('Login thất bại, không có userId')
+        }
+      } catch (err) {
+        console.error('Lỗi toàn bộ quá trình auto login:', err)
+      }
+    }
+
+    autoSignUpAndLogin()
+  }, [user])
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -109,7 +161,7 @@ export default function Login() {
             component='form'
             onSubmit={handleSubmit}
             noValidate
-            sx={{ mt: 1 }}
+            sx={{ width: '100%', mt: 2 }}
           >
             <TextField
               margin='normal'
@@ -149,6 +201,22 @@ export default function Login() {
             >
               Sign In
             </Button>
+            <SignInButton mode='redirect' redirectUrl='/callback'>
+              <Button
+                fullWidth
+                variant='outlined'
+                startIcon={
+                  <img
+                    src='https://developers.google.com/identity/images/g-logo.png'
+                    alt='Google logo'
+                    style={{ width: 20, height: 20 }}
+                  />
+                }
+                sx={{ mt: 1, borderRadius: 2 }}
+              >
+                Sign in with Google
+              </Button>
+            </SignInButton>
           </Box>
         </Box>
       </Paper>

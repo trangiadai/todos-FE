@@ -12,11 +12,13 @@ import Settings from '@mui/icons-material/Settings'
 import Logout from '@mui/icons-material/Logout'
 import anonymousAVT from '../../../assets/anonymousAVT.png'
 import { useNavigate } from 'react-router-dom'
+import { useClerk } from '@clerk/clerk-react'
 
 function Profiles() {
   const [anchorEl, setAnchorEl] = useState(null)
   const open = Boolean(anchorEl)
   const navigate = useNavigate()
+  const { signOut } = useClerk()
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget)
   }
@@ -24,10 +26,11 @@ function Profiles() {
   const handleClose = () => {
     setAnchorEl(null)
   }
-  const handleLogout = () => {
+  const handleLogout = async () => {
     // Xử lý đăng xuất ở đây
     console.log('Đăng xuất')
-    navigate('/', { replace: true }) // Chuyển hướng về trang đăng nhập
+    await signOut() // ✅ Đăng xuất Clerk trước
+    navigate('/', { replace: true }) // Quay về trang Login sau khi signOut
   }
 
   return (
@@ -72,8 +75,8 @@ function Profiles() {
           </ListItemIcon>
           Settings
         </MenuItem>
-        <MenuItem>
-          <ListItemIcon onClick={handleLogout}>
+        <MenuItem onClick={handleLogout}>
+          <ListItemIcon>
             <Logout fontSize='small' />
           </ListItemIcon>
           Logout
